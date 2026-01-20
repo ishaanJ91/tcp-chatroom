@@ -23,15 +23,18 @@ func main() {
 	// Runs when the main exits
 	defer ln.Close()
 
-	conn, err := ln.Accept()
+	numConnections := 0
+	for {
+		conn, _ := ln.Accept()
+		numConnections++
+		go handleConn(conn, numConnections)
+	}	
+}
 
-	if err != nil {
-		log.Fatal(err)
-	}
+func handleConn(conn net.Conn, clientNumber int) {
 	defer conn.Close()
-
 	reader := bufio.NewReader(conn)
-	fmt.Println("Client connected")
+	fmt.Println("Client", clientNumber, "connected")
 
 	for {
 		msg, err := reader.ReadString('\n')
@@ -41,7 +44,6 @@ func main() {
 			break
 		}
 		
-		fmt.Print("Client 1: ", msg)
+		fmt.Print("Client ", clientNumber, ": ", msg)
 	}
-
 }
