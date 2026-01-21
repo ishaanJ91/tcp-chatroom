@@ -36,12 +36,11 @@ func main() {
 		}
 
 		numConnections++
-		go handleIncomingConn(conn, numConnections, m)
-		go handleOutgoingConn(conn, numConnections)
+		go handleConnServer(conn, numConnections, m) 
 	}	
 }
 
-func handleIncomingConn(conn net.Conn, clientNumber int, m map[string]int) {
+func handleConnServer(conn net.Conn, clientNumber int, m map[string]int) {
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
 	line, err := reader.ReadString('\n')
@@ -56,12 +55,12 @@ func handleIncomingConn(conn net.Conn, clientNumber int, m map[string]int) {
 		fmt.Fprintln(conn, "Invalid login message")
 		return
 	}
-	fmt.Println("-----------------------------")
-	fmt.Println("Client", clientNumber, "logged in as ", loggedUser)
-	fmt.Println("-----------------------------")
 
+	messageServerTerm(clientNumber, loggedUser)
+	messageClientTerm(loggedUser, conn)
 	
 	for {
+		fmt.Fprintf(conn, "You: ")
 		msg, err := reader.ReadString('\n')
 
 		if err != nil {
@@ -92,4 +91,16 @@ func loggedUser(input string, m map[string]int) (string, bool) {
 
 	m[username]++
 	return username, true
+}
+
+func messageClientTerm(username string, conn net.Conn) {
+	fmt.Fprintf(conn, "-----------------------------\n")
+	fmt.Fprintf(conn, "WELCOME %s\n", username)
+	fmt.Fprintf(conn, "-----------------------------\n")
+}
+
+func messageServerTerm(clientNumber int, username string) {
+	fmt.Println("-----------------------------")
+	fmt.Println("Client", clientNumber, "logged in as", username)
+	fmt.Println("-----------------------------")
 }
