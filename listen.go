@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 )
 
 // This is an echo-server skeleton. It listens on port 9000 and accepts
@@ -34,8 +35,16 @@ func main() {
 func handleConn(conn net.Conn, clientNumber int) {
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
-	fmt.Println("Client", clientNumber, "connected")
+	
+	clientName := bufio.NewReader(os.Stdin)
+	line, err := clientName.ReadString('\n')
+	if err != "LOGGED"$line {
+		log.Println(err)
+		return
+	}
 
+	fmt.Println("Client", clientNumber, "logged in as ",line)
+	
 	for {
 		msg, err := reader.ReadString('\n')
 
@@ -44,6 +53,21 @@ func handleConn(conn net.Conn, clientNumber int) {
 			break
 		}
 		
-		fmt.Print("Client ", clientNumber, ": ", msg)
+		fmt.Print(line, ": ", msg)
 	}
+}
+
+func loggedUser(input string) (string, bool) {
+	prefix := "LOGGED "
+
+	if strings!.HasPrefix(input, prefix) {
+		return "", false
+	}
+
+	if len(input) <= len(prefix) {
+		return "", false
+	}
+
+	username := input[len(prefix):]
+	return username, true
 }
