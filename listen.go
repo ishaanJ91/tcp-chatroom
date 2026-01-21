@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
+	"strings"
 )
 
 // This is an echo-server skeleton. It listens on port 9000 and accepts
@@ -17,7 +17,7 @@ func main() {
 	ln, err := net.Listen("tcp", ":9000")
 
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error listening to our port 9000", err.Error())
 	}
 	fmt.Println("Listening on port 9000")
 
@@ -25,25 +25,41 @@ func main() {
 	defer ln.Close()
 
 	numConnections := 0
+	m := make(map[string]int)
 	for {
-		conn, _ := ln.Accept()
+		conn, err := ln.Accept()
+		
+		if err != nil {
+			log.Printf("Error while connecting to the addr: %s\n", err.Error(), conn.RemoteAddr())
+		} else {
+			fmt.Printf("Connection established to remote addr: %s\n", conn.RemoteAddr())
+		}
+
 		numConnections++
-		go handleConn(conn, numConnections)
+		go handleIncomingConn(conn, numConnections, m)
+		go handleOutgoingConn(conn, numConnections)
 	}	
 }
 
-func handleConn(conn net.Conn, clientNumber int) {
+func handleIncomingConn(conn net.Conn, clientNumber int, m map[string]int) {
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
+	line, err := reader.ReadString('\n')
 	
-	clientName := bufio.NewReader(os.Stdin)
-	line, err := clientName.ReadString('\n')
-	if err != "LOGGED"$line {
+	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	fmt.Println("Client", clientNumber, "logged in as ",line)
+	loggedUser, ok := loggedUser(line, m)
+	if !ok {
+		fmt.Fprintln(conn, "Invalid login message")
+		return
+	}
+	fmt.Println("-----------------------------")
+	fmt.Println("Client", clientNumber, "logged in as ", loggedUser)
+	fmt.Println("-----------------------------")
+
 	
 	for {
 		msg, err := reader.ReadString('\n')
@@ -53,14 +69,14 @@ func handleConn(conn net.Conn, clientNumber int) {
 			break
 		}
 		
-		fmt.Print(line, ": ", msg)
+		fmt.Print(loggedUser, ": ", strings.TrimSpace(msg), "\n")
 	}
 }
 
-func loggedUser(input string) (string, bool) {
+func loggedUser(input string, m map[string]int) (string, bool) {
 	prefix := "LOGGED "
 
-	if strings!.HasPrefix(input, prefix) {
+	if !strings.HasPrefix(input, prefix) {
 		return "", false
 	}
 
@@ -68,6 +84,12 @@ func loggedUser(input string) (string, bool) {
 		return "", false
 	}
 
-	username := input[len(prefix):]
+	username := strings.TrimSpace(input[len(prefix):])
+
+	if _, exists := m[username]; exists {
+		return "", false
+	}
+
+	m[username]++
 	return username, true
 }
